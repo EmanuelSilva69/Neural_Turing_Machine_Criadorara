@@ -1,3 +1,6 @@
+
+# Objetivo Geral
+
 Desenvolver um sistema baseado em Neural Turing Machine (NTM) capaz de gerar regras completas de uma Máquina de Turing (MT) simples a partir de uma descrição textual de uma tarefa e de uma entrada binária (fita).
 O sistema deve ser treinado para compreender instruções simbólicas e sintetizar automaticamente conjuntos de transições (δ) que representem corretamente o funcionamento de uma MT que resolve a tarefa especificada.
 
