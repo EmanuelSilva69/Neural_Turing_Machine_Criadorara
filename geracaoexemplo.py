@@ -20,7 +20,7 @@ def gerar_regras_copia(fita: str):
     return regras
 
 #  Geração
-fitas = gerar_fitas_binarias(18)
+fitas = gerar_fitas_binarias(16)
 
 # CSV: salva regras como texto flat (opcional)
 with open("dataset_copy_mt.csv", mode="w", newline='', encoding="utf-8") as f:

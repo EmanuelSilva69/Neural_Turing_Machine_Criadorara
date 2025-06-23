@@ -2,14 +2,15 @@ import json
 
 # Dicionário de tokens fixos
 TOKEN_DICT = {
-    '[TASK=COPY]': 0,
-    '0': 1,
-    '1': 2,
-    '_': 3,
-    'R': 4,
-    'L': 5,
-    'S': 6,
-    'HALT': 7
+    '<PAD>': 0,
+    '[TASK=COPY]': 1,
+    '0': 2,
+    '1': 3,
+    '_': 4,
+    'R': 5,
+    'L': 6,
+    'S': 7,
+    'HALT': 8
 }
 
 # Estados dinâmicos q0, q1, ...
