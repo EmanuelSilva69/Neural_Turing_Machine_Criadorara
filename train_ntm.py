@@ -4,11 +4,11 @@ from NTM import NTM
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-
+from Tokenização import TOKEN_DICT
 # Hiperparâmetros
-batch_size = 32
+batch_size = 128
 num_epochs = 400
-seq_len = 50  # escolha baseada na análise do histograma Valiidação por currículo seria [20,35,50]
+seq_len = 80 # escolha baseada na análise do histograma Valiidação por currículo seria [20,35,50], ou apenas 50
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Dataset base (sem filtro de tamanho ainda)
@@ -22,22 +22,23 @@ test_len = total_len - train_len - val_len
 train_set, val_set, test_set = random_split(full_dataset, [train_len, val_len, test_len])
 
 #  Definição do vocabulário
-max_token_id = 0
-for entrada, saida in full_dataset:
-    max_token_id = max(max_token_id, entrada.max().item(), saida.max().item())
-vocab_size = max_token_id + 1
+# Carrega token_dict da tokenização
+
+vocab_size = len(TOKEN_DICT)
+print("Tamanho do vocabulário:", vocab_size)
 
 #  Inicializa o modelo
 model = NTM(
-    input_dim=64,
+    input_dim=128,
     output_dim=vocab_size,
-    controller_dim=64,     # ↓ antes: 256
-    memory_units=64,       # ↓ antes: 256
-    memory_dim=20,         # ↓ antes: 40
-    heads=2                # ↓ antes: 3
+    controller_dim=128,
+    memory_units=64,
+    memory_dim=128,
+    heads=3,
+    controller_type='lstm'  # ou 'lstm'
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)  # L2 regularização
-criterion = nn.CrossEntropyLoss(ignore_index=0)
+criterion = nn.CrossEntropyLoss()
 losses = []
 val_losses = []
 test_losses = []
@@ -82,15 +83,7 @@ plt.show()
 
 #  Loop de Treinamento
 for epoch in range(num_epochs):
-    # Curriculum: atualiza seq_len
-    #if epoch < 75:
-    #    seq_len = 20
-    #elif epoch < 150:
-    #    seq_len = 35
-   # elif epoch < 225:
-    #    seq_len = 50
-    #else:
-    #    seq_len = 55
+
     
     # Filtra os datasets
     train_data = filtra_por_seq_len(full_dataset, train_set.indices, seq_len)
@@ -100,7 +93,7 @@ for epoch in range(num_epochs):
     val_loader = DataLoader(ListaDataset(val_data), batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
     test_loader = DataLoader(ListaDataset(test_data), batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
 
-    # 🔹 Treinamento
+    # Treinamento
     model.train()
     total_loss = 0
     for entradas, saidas in train_loader:
@@ -112,7 +105,7 @@ for epoch in range(num_epochs):
         loss = criterion(outputs[:min_len], saidas[:min_len])
         optimizer.zero_grad()
         loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)  # Clipping de gradientes
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=0.5)  # Clipping de gradientes
         optimizer.step()
         total_loss += loss.item()
     avg_loss = total_loss / len(train_loader)
@@ -136,7 +129,7 @@ for epoch in range(num_epochs):
         print(" Novo melhor modelo salvo!")
     print(f" Epoch {epoch+1}/{num_epochs} - Train Loss: {avg_loss:.4f} |  Val Loss: {val_loss:.4f}")
 
-# 🔸 Restaura o melhor modelo antes do teste
+#  Restaura o melhor modelo antes do teste
 model.load_state_dict(torch.load("melhor_modelo_ntm.pth"))
 #  Avaliação Final (Teste)
 test_loss = 0
@@ -151,7 +144,7 @@ with torch.no_grad():
 test_loss /= len(test_loader)
 print(f" Test Loss Final: {test_loss:.4f}")
 
-# 🔹 Plota curvas
+#  Plota curvas
 plt.plot(losses, label="Train")
 plt.plot(val_losses, label="Val")
 plt.xlabel("Epoch")

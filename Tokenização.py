@@ -1,7 +1,6 @@
-from torch.nn.utils.rnn import pad_sequence
-import torch
+import json
 
-# tokens para entrada e saída
+# Dicionário de tokens fixos
 TOKEN_DICT = {
     '[TASK=COPY]': 0,
     '0': 1,
@@ -10,74 +9,62 @@ TOKEN_DICT = {
     'R': 4,
     'L': 5,
     'S': 6,
-    'HALT': 7,
-    '→': 8,  # opcional
+    'HALT': 7
 }
 
-# estados são adicionados dinamicamente
-for i in range(100):  # até 100 estados
+# Estados dinâmicos q0, q1, ...
+for i in range(100):
     TOKEN_DICT[f'q{i}'] = len(TOKEN_DICT)
-    #tokenizar a entrada
+# Tamanho do vocabulário
+vocab_size = len(TOKEN_DICT)
+print(" Tamanho do vocabulário:", vocab_size)
+# Função para tokenizar a entrada
 def tokenize_input(task: str, tape: str) -> list[int]:
     tokens = [TOKEN_DICT[f'[TASK={task.upper()}]']]
     for bit in tape:
         tokens.append(TOKEN_DICT[bit])
     return tokens
-#teste
-tokens = tokenize_input('COPY', '1010')
-print(tokens)  # [0, 2, 1, 2, 1]
-#função pra copiar sequencia
-def generate_copy_rules(tape: str) -> list[list[str]]:
-    rules = []
-    for i, bit in enumerate(tape):
-        rules.append([f'q{i}', bit, f'q{i+1}', bit, 'R'])
-    rules.append([f'q{len(tape)}', '_', 'HALT', '_', 'S'])
-    return rules
 
-rules = generate_copy_rules('1010')
-# [['q0','1','q1','1','R'], ['q1','0','q2','0','R'], ..., ['q4','_','HALT','_','S']]
-print(rules)
-# função para tokenizar a saída
-def tokenize_output(rules: list[list[str]]) -> list[int]:
-    return [TOKEN_DICT[token] for rule in rules for token in rule]
-tokenized = tokenize_output(rules)
-print(tokenized)
-# [q0, 1, q1, 1, R, q1, 0, q2, 0, R, ..., q4, _, HALT, _, S]
+# Função para tokenizar a saída (token a token, sem ignorar)
+def tokenize_output(regras_flat: list[str]) -> list[int]:
+    tokens = []
+    for token in regras_flat:
+        if token not in TOKEN_DICT:
+            raise KeyError(f"Token desconhecido: {token}")
+        tokens.append(TOKEN_DICT[token])
+    return tokens
 
-import csv
-import json
+# Tokenizar todo o dataset_copy_mt.json
+with open("dataset_copy_mt.json", "r", encoding="utf-8") as f:
+    dataset = json.load(f)
 
-# função para processar uma linha do CSV
-def processar_exemplo(entrada_texto: str, regras_texto: str):
-    # exemplo: entrada_texto = "[TASK=COPY] 1010"
-    task, fita = entrada_texto.strip().split()
-    entrada_tokens = tokenize_input(task=task.strip("[TASK=]"), tape=fita)
+tokenizado = []
+for idx, exemplo in enumerate(dataset):
+    entrada_texto = exemplo["entrada"]
+    regras_raw = exemplo["regras"]  # lista de listas
+    
+    # Achata as regras
+    regras_flat = [token for regra in regras_raw for token in regra]
+    
+    task, fita = entrada_texto.split()
+    entrada_tokens = tokenize_input(task.strip("[TASK=]"), fita)
+    saida_tokens = tokenize_output(regras_flat)
 
-    # exemplo: regras_texto = "(q0,1)→(q1,1,R); (q1,0)→(q2,0,R); ..."
-    regras_raw = regras_texto.strip().split("; ")
-    regras = []
-    for regra in regras_raw:
-        esquerda, direita = regra.split("→")
-        q, s = esquerda.strip("()").split(",")
-        q2, s2, d = direita.strip("()").split(",")
-        regras.append([q, s, q2, s2, d])
+    # Mostra o primeiro exemplo
+    if idx == 0:
+        print(" Entrada original:", entrada_texto)
+        print(" Entrada tokenizada:", entrada_tokens)
+        print(" Regras originais:", regras_raw)
+        print(" Regras tokenizadas:", saida_tokens)
+        print("-" * 50)
 
-    saida_tokens = tokenize_output(regras)
-    return entrada_tokens, saida_tokens
+    tokenizado.append({
+        "entrada_tokenizada": entrada_tokens,
+        "saida_tokenizada": saida_tokens
+    })
 
-# carregar e processar CSV
-dataset_tokenizado = []
-with open("dataset_copy_mt.csv", newline='', encoding='utf-8') as f:
-    reader = csv.DictReader(f)
-    for linha in reader:
-        entrada_txt = linha["entrada"]
-        regras_txt = linha["regras"]
-        entrada_tokens, saida_tokens = processar_exemplo(entrada_txt, regras_txt)
-        dataset_tokenizado.append({
-            "entrada_tokenizada": entrada_tokens,
-            "saida_tokenizada": saida_tokens
-        })
-
-# salvar como .json
+# Salvar como JSON final
 with open("dataset_tokenizado.json", "w", encoding="utf-8") as f:
-    json.dump(dataset_tokenizado, f, indent=2)
+    json.dump(tokenizado, f, indent=2, ensure_ascii=False)
+
+print(" Tokenização concluída. Exemplos salvos em dataset_tokenizado.json")

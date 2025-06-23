@@ -32,15 +32,19 @@ class MTDataset(Dataset):
         return entrada, saida
 
 # Função auxiliar para formar batches com padding automático
+from torch.nn.utils.rnn import pad_sequence
+import torch
+
 def collate_fn(batch):
-        # Separa entradas e saídas em listas distintas
-        entradas, saidas = zip(*batch)
+    # Separa entradas e saídas
+    entradas, saidas = zip(*batch)
 
-        # Faz padding para que todas as entradas do batch tenham o mesmo tamanho
-        entradas_padded = pad_sequence(entradas, batch_first=True, padding_value=0)
+    # Garante que todas as sequências são tensores (caso ainda não sejam)
+    entradas = [torch.tensor(seq, dtype=torch.long) for seq in entradas]
+    saidas = [torch.tensor(seq, dtype=torch.long) for seq in saidas]
 
-        # Faz o mesmo padding para as saídas
-        saidas_padded = pad_sequence(saidas, batch_first=True, padding_value=0)
+    # Aplica padding
+    entradas_padded = pad_sequence(entradas, batch_first=True, padding_value=0)
+    saidas_padded = pad_sequence(saidas, batch_first=True, padding_value=0)
 
-        # Retorna os tensores empacotados e alinhados por padding
-        return entradas_padded, saidas_padded
+    return entradas_padded, saidas_padded
