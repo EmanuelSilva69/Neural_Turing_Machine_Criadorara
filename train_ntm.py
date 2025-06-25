@@ -6,9 +6,9 @@ import torch
 import torch.nn as nn
 from Tokenização import TOKEN_DICT
 # Hiperparâmetros
-batch_size = 128
+batch_size = 64
 num_epochs = 400
-seq_len = 80 # escolha baseada na análise do histograma Valiidação por currículo seria [20,35,50], ou apenas 50
+seq_len = 100 # escolha baseada na análise do histograma Valiidação por currículo seria [20,35,50], ou apenas 50
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Dataset base (sem filtro de tamanho ainda)
@@ -27,6 +27,7 @@ train_set, val_set, test_set = random_split(full_dataset, [train_len, val_len, t
 vocab_size = len(TOKEN_DICT)
 print("Tamanho do vocabulário:", vocab_size)
 
+
 #  Inicializa o modelo
 model = NTM(
     input_dim=128,
@@ -38,12 +39,20 @@ model = NTM(
     controller_type='lstm'  # ou 'lstm'
 ).to(device)
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-4, weight_decay=1e-5)  # L2 regularização
-criterion = nn.CrossEntropyLoss()
+PAD_IDX = TOKEN_DICT["<PAD>"]
+criterion = nn.CrossEntropyLoss(ignore_index=PAD_IDX)
 losses = []
 val_losses = []
 test_losses = []
 best_val_loss = float('inf')
 best_model_state = None
+
+def init_weights(m):
+    if isinstance(m, nn.Linear):
+        nn.init.xavier_uniform_(m.weight)
+        if m.bias is not None:
+            nn.init.zeros_(m.bias)
+model.apply(init_weights)
 # Dataset auxiliar para wrapping
 class ListaDataset(torch.utils.data.Dataset):
     def __init__(self, lista):
