@@ -55,7 +55,8 @@ def gerar_exemplo_copia(comprimento_min: int, comprimento_max: int, tamanho_veto
                    [REVERSE_TOKEN_DICT[END_TOKEN]]
     
     # A saída esperada da NTM: sequencia_entrada, [FIM]
-    saida_json = [''.join(map(str, vetor)) for vetor in sequencia_entrada_bits] + \
+    saida_json = [REVERSE_TOKEN_DICT[PAD_TOKEN]] + \
+                 [''.join(map(str, vetor)) for vetor in sequencia_entrada_bits] + \
                  [REVERSE_TOKEN_DICT[END_TOKEN]]
                  
     return entrada_json, saida_json

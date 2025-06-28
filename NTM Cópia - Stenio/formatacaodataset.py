@@ -5,7 +5,7 @@ import numpy as np
 
 # Importa os tokens definidos no GeradorDataset.py para garantir consistência
 try:
-    from .GeradorDataset import TOKEN_DICT, PAD_TOKEN, START_TOKEN, END_TOKEN, TASK_COPY_TOKEN
+    from GeradorDataset import TOKEN_DICT, PAD_TOKEN, START_TOKEN, END_TOKEN, TASK_COPY_TOKEN
 except ImportError:
     print("Não foi possível importar tokens de GeradorDataset.py. Usando definição local.")
     # Fallback para definição local se a importação falhar.
@@ -18,7 +18,7 @@ except ImportError:
         '1': 5,
     }
     PAD_TOKEN = TOKEN_DICT['[PAD]']
-    START_TOKEN = TOKEN_DICT['[INICIO']
+    START_TOKEN = TOKEN_DICT['[INICIO]']
     END_TOKEN = TOKEN_DICT['[FIM]']
     TASK_COPY_TOKEN = TOKEN_DICT['[COPIA_TASK]']
 
