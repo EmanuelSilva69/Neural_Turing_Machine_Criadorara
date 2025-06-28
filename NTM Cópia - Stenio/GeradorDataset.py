@@ -105,7 +105,7 @@ if __name__ == "__main__":
     # Dataset de avaliação (comprimentos possivelmente maiores para testar generalização)
     gerar_dataset(
         nome_arquivo='dataset_avaliacao_copia.json',
-        num_exemplos=1000,
+        num_exemplos=10000,
         comprimento_min_seq=21, # Maior que o de treinamento para testar generalização
         comprimento_max_seq=50, # Até 50 para teste, ou mais para verificar limites
         tamanho_vetor_bit=8
