@@ -101,3 +101,8 @@ if __name__ == "__main__":
         output_path="avaliacao_resultados.txt",
         examples_path="avaliacao_exemplos.txt"
     )
+
+
+    dataset = CopyDatasetFromJSON("dataset_avaliacao.json")
+    lengths = [x.shape[0] for x, _ in dataset]
+    print(f"Comprimentos únicos: {sorted(set(lengths))}")
