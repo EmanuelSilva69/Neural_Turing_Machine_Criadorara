@@ -142,7 +142,7 @@ for epoca in range(1, NUM_EPOCAS + 1):
 
     print(f"Época {epoca}/{NUM_EPOCAS}, Perda de Treinamento: {perda_media_epoca:.4f}")
 
-    # --- Avaliação (a cada N épocas ou sempre) ---
+    # Avaliação (a cada N épocas ou sempre)
     if epoca % 100 == 0: # Avalia a cada 100 épocas para economizar tempo
         modelo_ntm.eval() # Define o modelo para o modo de avaliação (desliga dropout/batchnorm, etc.)
         perda_avaliacao_total = 0
