@@ -14,7 +14,7 @@ from formatacaodataset import DatasetTarefaMaquinaTuring, collate_fn_pad_sequenc
 # Estes valores são exemplos e podem precisar de ajuste fino.
 # Referências para alguns valores:
 
-NUM_EPOCAS = 100 # Número de épocas de treinamento (pode ser muito alto, ajuste conforme convergência)
+NUM_EPOCAS = 50 # Número de épocas de treinamento (pode ser muito alto, ajuste conforme convergência)
 TAMANHO_BATCH = 1    # Batch size: Para NTMs com estado de memória que persiste, é comum usar 1.
                      # Se batch_size > 1, a memória da NTM no forward precisaria ser tratada por elemento do batch.
 TAXA_APRENDIZADO = 1e-4 # Taxa de aprendizado
