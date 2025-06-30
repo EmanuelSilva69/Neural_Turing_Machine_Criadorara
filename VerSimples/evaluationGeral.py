@@ -87,7 +87,7 @@ def evaluate_metrics(model, dataset_path, num_samples=100, threshold=0.5, output
 
 if __name__ == "__main__":
     dataset_file = "dataset_avaliacao.json"
-    generate_temporary_dataset(path=dataset_file, num_samples=1000)
+    generate_temporary_dataset(path=dataset_file, num_samples=1000,max_len=20)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = NTM(input_size=8, output_size=8)
@@ -96,8 +96,13 @@ if __name__ == "__main__":
     evaluate_metrics(
         model=model,
         dataset_path=dataset_file,
-        num_samples=400,
+        num_samples=500,
         threshold=0.5,
         output_path="avaliacao_resultados.txt",
         examples_path="avaliacao_exemplos.txt"
     )
+
+
+    dataset = CopyDatasetFromJSON("dataset_avaliacao.json")
+    lengths = [x.shape[0] for x, _ in dataset]
+    print(f"Comprimentos únicos: {sorted(set(lengths))}")

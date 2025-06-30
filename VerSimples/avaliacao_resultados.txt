@@ -1,5 +1,5 @@
-Avaliação em 400 exemplos aleatórios:
-F1 Score: 0.9995
-Acurácia (bit a bit): 0.9995
+Avaliação em 500 exemplos aleatórios:
+F1 Score: 0.9997
+Acurácia (bit a bit): 0.9997
 Precisão: 1.0000
-Recall: 0.9990
+Recall: 0.9993
