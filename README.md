@@ -7,3 +7,7 @@ Desenvolver e treinar uma Neural Turing Machine (NTM) capaz de aprender a tarefa
 ## Ver Simples -> Código da NTM de Cópia do Emanuel
 
 ## Ver Nova -> Código do antigo Teste da criação de NTM que cria Novas Máquinas de Turing
+
+## InversãoEmanuel -> código de Inversão de Bit de Emanuel
+
+## Código de Còpia do Stenio -> versão da cópia do stenio
