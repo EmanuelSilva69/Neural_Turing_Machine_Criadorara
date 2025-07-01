@@ -11,3 +11,5 @@ Desenvolver e treinar uma Neural Turing Machine (NTM) capaz de aprender a tarefa
 ## InversãoEmanuel -> código de Inversão de Bit de Emanuel
 
 ## Código de Còpia do Stenio -> versão da cópia do stenio
+
+## InversãoArthur -> código de Inversão de Bit de Arthur
