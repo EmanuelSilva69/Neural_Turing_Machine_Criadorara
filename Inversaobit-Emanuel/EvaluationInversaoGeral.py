@@ -109,8 +109,8 @@ if __name__ == "__main__":
     gerar_dataset_inversao_para_teste(
         path="dataset_inversao_bits_teste.json",
         num_samples=3000,
-        min_len=1,
-        max_len=40
+        min_len=40,
+        max_len=100
     )
 
     # Carregar modelo treinado
