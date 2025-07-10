@@ -10,7 +10,7 @@ import math
 from NTM import NeuralTuringMachine
 from formatacaodataset import DatasetTarefaMaquinaTuring, collate_fn_pad_sequencias, TOKEN_DICT, PAD_TOKEN
 
-# --- Definições de Hiperparâmetros ---
+# Definições de Hiperparâmetros
 # Estes valores são exemplos e podem precisar de ajuste fino.
 # Referências para alguns valores:
 
@@ -39,11 +39,11 @@ TIPO_CONTROLADOR = 'Feedforward'
 CAMINHO_MODELOS_SALVOS = 'modelos_salvos' # Pasta para salvar os modelos
 NOME_ARQUIVO_MODELO = os.path.join(CAMINHO_MODELOS_SALVOS, 'ntm_copia_basica.pth')
 
-# --- Configuração do Dispositivo (GPU vs. CPU) ---
+# Configuração do Dispositivo
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Usando o dispositivo: {DEVICE}")
 
-# --- Carregar Dados ---
+# Carregar Dados
 print("Carregando datasets...")
 dataset_treinamento = DatasetTarefaMaquinaTuring('dataset_treinamento_copia.json', TAMANHO_VETOR_BIT)
 loader_treinamento = DataLoader(dataset_treinamento, batch_size=TAMANHO_BATCH, shuffle=True,
@@ -56,7 +56,7 @@ loader_avaliacao = DataLoader(dataset_avaliacao, batch_size=TAMANHO_BATCH, shuff
 print(f"Dataset de treinamento carregado com {len(dataset_treinamento)} exemplos.")
 print(f"Dataset de avaliação carregado com {len(dataset_avaliacao)} exemplos.")
 
-# --- Instanciar Modelo, Otimizador e Função de Perda ---
+# Instanciar Modelo, Otimizador e Função de Perda
 print("Instanciando modelo, otimizador e função de perda...")
 modelo_ntm = NeuralTuringMachine(
     tamanho_entrada=TAMANHO_ENTRADA_NTM,
@@ -74,13 +74,13 @@ otimizador = optim.Adam(modelo_ntm.parameters(), lr=TAXA_APRENDIZADO)
 
 # Função de perda: Binary Cross Entropy Loss.
 # A saída da NTM já é passada por sigmoid em NTM.py, então BCELoss é apropriada.
-# - Cross-entropy objective function for binary targets.
+# Cross-entropy objective function for binary targets.
 funcao_perda = nn.BCELoss() 
 
 # Certifique-se de que a pasta para salvar modelos existe
 os.makedirs(CAMINHO_MODELOS_SALVOS, exist_ok=True)
 
-# --- Loop de Treinamento ---
+# Loop de Treinamento
 print("Iniciando treinamento...")
 melhor_perda_avaliacao = float('inf')
 
@@ -95,7 +95,7 @@ for epoca in range(1, NUM_EPOCAS + 1):
         # Redefine os estados internos da NTM para cada nova sequência/exemplo.
         # Isso é crucial para NTMs, pois cada exemplo é um "episódio" independente.
         modelo_ntm.resetar_estados_internos()
-        estado_controlador = None # Para LSTM: (h_0, c_0)
+        estado_controlador = None
 
         perda_batch = 0
         
@@ -142,7 +142,7 @@ for epoca in range(1, NUM_EPOCAS + 1):
 
     print(f"Época {epoca}/{NUM_EPOCAS}, Perda de Treinamento: {perda_media_epoca:.4f}")
 
-    # Avaliação (a cada N épocas ou sempre)
+    # Avaliação
     if epoca % 100 == 0: # Avalia a cada 100 épocas para economizar tempo
         modelo_ntm.eval() # Define o modelo para o modo de avaliação (desliga dropout/batchnorm, etc.)
         perda_avaliacao_total = 0

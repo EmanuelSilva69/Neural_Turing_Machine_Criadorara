@@ -203,14 +203,14 @@ if __name__ == "__main__":
     # Testar um batch
     for batch_idx, (entradas, saidas, comprimentos) in enumerate(loader_treino):
         print(f"\nBatch {batch_idx+1}:")
-        print(f"  Shape das entradas: {entradas.shape}") # (batch_size, max_seq_len, tamanho_passo_tempo)
-        print(f"  Shape das saídas: {saidas.shape}")     # (batch_size, max_seq_len, tamanho_passo_tempo)
+        print(f"  Shape das entradas: {entradas.shape}")
+        print(f"  Shape das saídas: {saidas.shape}")
         print(f"  Comprimentos reais das sequências: {comprimentos}")
         
         print("Primeiro vetor de entrada do primeiro exemplo:", entradas[0, 0, :])
         print("Primeiro vetor de saída do primeiro exemplo:", saidas[0, 0, :])
         
-        if batch_idx == 0: # Apenas para o primeiro batch
+        if batch_idx == 0:
             break
 
     print("\nTeste de carregamento do dataset concluído.")

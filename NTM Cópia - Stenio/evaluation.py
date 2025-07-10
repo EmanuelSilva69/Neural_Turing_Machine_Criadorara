@@ -11,7 +11,7 @@ from formatacaodataset import DatasetTarefaMaquinaTuring, collate_fn_pad_sequenc
 # Para exibir os tokens de volta em formato legível
 REVERSE_TOKEN_DICT = {v: k for k, v in TOKEN_DICT.items()}
 
-# --- Definições de Hiperparâmetros e Configurações (devem corresponder ao train.py) ---
+# Definições de Hiperparâmetros e Configurações
 # Estes valores devem ser os mesmos usados durante o treinamento para instanciar o modelo corretamente.
 TAMANHO_BATCH_AVALIACAO = 1 # Geralmente 1 para avaliação sequencial de NTMs
 TAXA_APRENDIZADO = 1e-4 # Não é usado na avaliação, mas bom para contexto
@@ -31,22 +31,22 @@ TAMANHO_CONTROLADOR = 100
 TIPO_CONTROLADOR = 'Feedforward'
 
 CAMINHO_MODELOS_SALVOS = 'modelos_salvos'
-NOME_ARQUIVO_MODELO = os.path.join(CAMINHO_MODELOS_SALVOS, 'ntm_copia_basica.pth') # Certifique-se de que este nome corresponde ao que você salvou
+NOME_ARQUIVO_MODELO = os.path.join(CAMINHO_MODELOS_SALVOS, 'ntm_copia_basica.pth')
 
 CAMINHO_DATASET_AVALIACAO = 'dataset_avaliacao_copia.json'
 
-# --- Configuração do Dispositivo (GPU vs. CPU) ---
+# Configuração do Dispositivo
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Usando o dispositivo: {DEVICE}")
 
-# --- Carregar Dados de Avaliação ---
+# Carregar Dados de Avaliação
 print(f"Carregando dataset de avaliação de: {CAMINHO_DATASET_AVALIACAO}")
 dataset_avaliacao = DatasetTarefaMaquinaTuring(CAMINHO_DATASET_AVALIACAO, TAMANHO_VETOR_BIT)
 loader_avaliacao = DataLoader(dataset_avaliacao, batch_size=TAMANHO_BATCH_AVALIACAO, shuffle=False,
                               collate_fn=lambda b: collate_fn_pad_sequencias(b, TAMANHO_VETOR_BIT))
 print(f"Dataset de avaliação carregado com {len(dataset_avaliacao)} exemplos.")
 
-# --- Instanciar e Carregar Modelo Treinado ---
+# Instanciar e Carregar Modelo Treinado
 print("Instanciando e carregando o modelo treinado...")
 modelo_ntm = NeuralTuringMachine(
     tamanho_entrada=TAMANHO_ENTRADA_NTM,
@@ -65,15 +65,14 @@ if os.path.exists(NOME_ARQUIVO_MODELO):
     print(f"Modelo carregado com sucesso de: {NOME_ARQUIVO_MODELO}")
 else:
     print(f"Erro: Modelo não encontrado em {NOME_ARQUIVO_MODELO}. Certifique-se de ter treinado o modelo primeiro.")
-    exit() # Sai se o modelo não for encontrado
+    exit()
 
 modelo_ntm.eval() # Define o modelo para o modo de avaliação
 
 # Função de perda para calcular a perda na avaliação
 funcao_perda = nn.BCELoss()
 
-# --- Funções Auxiliares para Avaliação e Visualização ---
-
+# Funções Auxiliares para Avaliação e Visualização 
 def converter_vetor_para_tokens(vetor_tensor: torch.Tensor, tamanho_vetor_bit: int):
     """
     Converte um vetor numérico de saída da NTM de volta para a string de tokens.
@@ -82,7 +81,7 @@ def converter_vetor_para_tokens(vetor_tensor: torch.Tensor, tamanho_vetor_bit: i
     # Thresholding para converter probabilidades em bits binários (0 ou 1)
     bits_previstos = (vetor_tensor[:tamanho_vetor_bit] > 0.5).int().tolist()
     
-    # Verifica se há algum token especial ativado (pode haver mais de um com sigmoid)
+    # Verifica se há algum token especial ativado
     # Pega o token especial com maior probabilidade se houver.
     tokens_especiais_preds = vetor_tensor[tamanho_vetor_bit:].tolist()
     
@@ -101,10 +100,6 @@ def converter_vetor_para_tokens(vetor_tensor: torch.Tensor, tamanho_vetor_bit: i
         # Para a tarefa de cópia, [FIM] é o mais relevante.
         if token_especial_str == '[FIM]':
             return '[FIM]'
-        # Outros tokens especiais geralmente não fazem parte da saída da cópia,
-        # exceto se a tarefa for mais complexa.
-        # Para simplicidade na cópia, se for um vetor de bits puro e não [FIM], retornamos os bits.
-    
     # Se nenhum token especial for dominante ou for um vetor de bits
     return ''.join(map(str, bits_previstos))
 
@@ -132,15 +127,15 @@ def calcular_metricas_sequencia(previsoes_seq: list, targets_seq: list, comprime
         comprimento = comprimentos_reais[i]
 
         # Compara apenas os passos de tempo reais, ignorando o padding
-        previsao_real = torch.stack(previsao_item[:comprimento]) # (comprimento, tamanho_passo_tempo)
-        target_real = torch.stack(target_item[:comprimento]) # (comprimento, tamanho_passo_tempo)
+        previsao_real = torch.stack(previsao_item[:comprimento]) 
+        target_real = torch.stack(target_item[:comprimento])
         
         # Converte probabilidades para binário (0 ou 1) usando threshold de 0.5
         previsao_binaria = (previsao_real > 0.5).float()
 
         # Compara bit a bit
         bits_corretos_na_seq = (previsao_binaria == target_real).sum().item()
-        total_bits_na_seq = target_real.numel() # Número total de elementos (bits) na sequência real
+        total_bits_na_seq = target_real.numel()
 
         total_bits_corretos += bits_corretos_na_seq
         total_bits += total_bits_na_seq
@@ -155,7 +150,7 @@ def calcular_metricas_sequencia(previsoes_seq: list, targets_seq: list, comprime
     return acuracia_bit_a_bit, acuracia_sequencia_exata
 
 
-# --- Loop de Avaliação ---
+# Loop de Avaliação
 print("\nIniciando avaliação...")
 perda_avaliacao_total = 0
 todas_previsoes = []
@@ -175,7 +170,7 @@ with torch.no_grad(): # Desativa o cálculo de gradientes para otimização de m
         previsoes_do_batch_seq = [[] for _ in range(TAMANHO_BATCH_AVALIACAO)]
         targets_do_batch_seq = [[] for _ in range(TAMANHO_BATCH_AVALIACAO)]
 
-        for t in range(entradas_batch.size(1)): # Itera sobre os passos de tempo
+        for t in range(entradas_batch.size(1)):
             entrada_passo_tempo = entradas_batch[:, t, :].to(DEVICE)
             saida_esperada_passo_tempo = saidas_batch[:, t, :].to(DEVICE)
 
@@ -195,16 +190,16 @@ with torch.no_grad(): # Desativa o cálculo de gradientes para otimização de m
         todos_targets.extend(targets_do_batch_seq)
         todos_comprimentos.extend(comprimentos_reais_batch)
 
-# --- Relatório Final da Avaliação ---
+# Relatório Final da Avaliação
 perda_media_avaliacao = perda_avaliacao_total / len(loader_avaliacao)
 acuracia_bit_a_bit, acuracia_sequencia_exata = calcular_metricas_sequencia(todas_previsoes, todos_targets, todos_comprimentos)
 
 print(f"\n--- Resultados da Avaliação ---")
 print(f"Perda Média: {perda_media_avaliacao:.4f}")
 print(f"Acurácia Bit-a-Bit: {acuracia_bit_a_bit:.4f}")
-print(f"Acurácia de Sequência Exata: {acuracia_sequencia_exata:.4f}") # Quão frequentemente a sequência INTEIRA foi prevista corretamente
+print(f"Acurácia de Sequência Exata: {acuracia_sequencia_exata:.4f}")
 
-# --- Exemplos de Saída ---
+# Exemplos de Saída
 print("\n--- Exemplos de Previsões ---")
 num_exemplos_para_mostrar = 5
 for i in range(min(num_exemplos_para_mostrar, len(dataset_avaliacao))):
@@ -212,7 +207,7 @@ for i in range(min(num_exemplos_para_mostrar, len(dataset_avaliacao))):
     
     # Pega os dados originais do dataset
     entrada_original, saida_original = dataset_avaliacao[i]
-    comprimento_real = len(entrada_original) # Para a cópia, entrada e saída têm o mesmo comprimento real
+    comprimento_real = len(entrada_original) 
 
     # Pega as previsões correspondentes (que já estão sem padding até o comprimento real)
     previsoes_exemplo = todas_previsoes[i]
@@ -222,10 +217,8 @@ for i in range(min(num_exemplos_para_mostrar, len(dataset_avaliacao))):
     entrada_str = [converter_vetor_para_tokens(v, TAMANHO_VETOR_BIT) for v in entrada_original]
     saida_esperada_str = [converter_vetor_para_tokens(v, TAMANHO_VETOR_BIT) for v in targets_exemplo]
     saida_prevista_str = [converter_vetor_para_tokens(v, TAMANHO_VETOR_BIT) for v in previsoes_exemplo]
-
-    # Ajusta a representação do token [FIM] para melhorar a leitura
-    # O [FIM] na entrada é um delimitador de input. Na saída, é o fim da cópia.
     
+    # Exibe os tokens
     print(f"  Entrada (Tokens): {' '.join(entrada_str)}")
     print(f"  Saída Esperada (Tokens): {' '.join(saida_esperada_str)}")
     print(f"  Saída Prevista (Tokens): {' '.join(saida_prevista_str)}")

@@ -25,11 +25,9 @@ class NeuralTuringMachine(nn.Module):
 
         # Parâmetros de deslocamento (shift) para a convolução.
         self.intervalo_shift = 1 # Define o intervalo de shift (ex: 1 para [-1, 0, 1])
-        self.tamanho_kernel_shift = (self.intervalo_shift * 2) + 1 # Tamanho do kernel de convolução (ex: 3)
+        self.tamanho_kernel_shift = (self.intervalo_shift * 2) + 1
 
         # 1. Definir o Controlador
-        # A entrada do controlador será a entrada externa concatenada com os vetores lidos
-        # na etapa de tempo anterior (r_t-1 de cada cabeçote de leitura).
         tamanho_entrada_controlador = tamanho_entrada + (num_cabecas_leitura * tamanho_memoria_colunas)
 
         if tipo_controlador == 'LSTM':
@@ -41,20 +39,10 @@ class NeuralTuringMachine(nn.Module):
             raise ValueError("Tipo de controlador inválido. Escolha 'LSTM' ou 'Feedforward'.")
 
         # 2. Definir a Matriz de Memória
-        # A memória é um parâmetro aprendível. É crucial inicializá-la com pequenos valores constantes
-        # para estabilidade durante o treinamento.
         self.memoria = nn.Parameter(torch.Tensor(tamanho_memoria_linhas, tamanho_memoria_colunas))
         nn.init.constant_(self.memoria, 1e-6) # Inicialização para pequenos valores constantes.
 
         # 3. Definir as Projeções dos Parâmetros dos Cabeçotes a partir da Saída do Controlador
-        # O controlador produzirá um vetor grande que será dividido para parametrizar todos os cabeçotes.
-        # Para CADA cabeçote (leitura ou escrita), precisamos dos seguintes parâmetros:
-        # - k (chave de busca de conteúdo): tamanho_memoria_colunas
-        # - beta (força da chave): 1 (escalar)
-        # - g (gate de interpolação): 1 (escalar, entre 0 e 1)
-        # - s (vetor de shift): tamanho_kernel_shift (distribuição sobre shifts)
-        # - gamma (nitidez do foco): 1 (escalar, >= 1)
-        
         tamanho_parametros_comuns_por_cabeca = (self.tamanho_memoria_colunas + # k
                                                 1 + # beta
                                                 1 + # g
@@ -108,13 +96,12 @@ class NeuralTuringMachine(nn.Module):
         batch_size = entrada_externa.size(0)
 
         # 1. Preparar a entrada para o controlador
-        # Concatena a entrada externa com os vetores lidos na etapa de tempo anterior.
         vetores_lidos_concatenados = torch.cat(self.vetores_leitura_anteriores, dim=1)
         entrada_controlador = torch.cat([entrada_externa, vetores_lidos_concatenados], dim=1)
 
         # 2. Executar o Controlador
         if self.tipo_controlador == 'LSTM':
-        # ... Lógica LSTM existente ...
+        # Lógica LSTM existente
             if estado_controlador_anterior is None:
                 h_anterior = torch.zeros(batch_size, self.tamanho_controlador, device=entrada_externa.device)
                 c_anterior = torch.zeros(batch_size, self.tamanho_controlador, device=entrada_externa.device)
@@ -126,12 +113,11 @@ class NeuralTuringMachine(nn.Module):
             )
             saida_controlador = self.estado_oculto_controlador
             estado_controlador_para_proximo = (self.estado_oculto_controlador, self.estado_celula_controlador)
-        else: # Feedforward
+        else:
             saida_controlador = self.controlador(entrada_controlador)
             estado_controlador_para_proximo = None # Não há estado para passar para frente em um FF
 
         # 3. Gerar os Parâmetros dos Cabeçotes a partir da Saída do Controlador
-        # Projeta a saída do controlador para um vetor grande contendo todos os parâmetros dos cabeçotes.
         parametros_brutos_cabecotes = self.projecao_parametros_cabecotes(saida_controlador)
         
         # Divide o vetor de parâmetros brutos em parâmetros individuais para cada cabeçote.
@@ -195,7 +181,6 @@ class NeuralTuringMachine(nn.Module):
         self.vetores_leitura_anteriores = vetores_lidos_atuais # Armazena para a próxima iteração do forward
 
         # 5. Operações de Escrita
-        # Clona a memória atual para realizar as operações de escrita, mantendo o grafo computacional.
         memoria_atualizada = self.memoria.clone()
         for i in range(self.num_cabecas_escrita):
             # Pega os parâmetros do cabeçote de escrita. O índice é ajustado porque `parametros_cabecas`
@@ -218,14 +203,12 @@ class NeuralTuringMachine(nn.Module):
         self.memoria = nn.Parameter(memoria_atualizada) # Atualiza a memória principal do modelo com a nova versão
 
         # 6. Saída Final da NTM
-        # A saída externa da NTM é uma projeção da saída do controlador, passada por uma sigmoid para bits.
         saida_final = torch.sigmoid(self.projecao_saida_final(saida_controlador))
 
         # Retorna a saída externa e o estado do controlador (ajustado para FF)
         return saida_final, estado_controlador_para_proximo
 
     # Métodos Auxiliares para as Operações de Memória
-    
     def _similaridade_cosseno(self, u, v_memoria):
         # u: chave (batch_size, tamanho_memoria_colunas)
         # v_memoria: a matriz de memória (tamanho_memoria_linhas, tamanho_memoria_colunas)
@@ -236,7 +219,6 @@ class NeuralTuringMachine(nn.Module):
         v_memoria_norm = F.normalize(v_memoria, p=2, dim=1) # Normaliza linhas da memória (N, M)
 
         # Calcula o produto escalar entre cada chave e cada linha da memória.
-        # (batch_size, M) @ (M, N) = (batch_size, N)
         return torch.matmul(u_norm, v_memoria_norm.transpose(0, 1))
 
     def _calcular_pesos_atencao(self, k, beta, g, s, gamma, memoria, pesos_anteriores):
@@ -251,21 +233,15 @@ class NeuralTuringMachine(nn.Module):
         batch_size = k.size(0)
 
         # 1. Focagem Baseada em Conteúdo (w_c)
-        # Calcula a similaridade de cosseno entre a chave 'k' e cada linha da memória.
         similaridade = self._similaridade_cosseno(k, memoria)
         
         # Aplica beta para ajustar a nitidez e então softmax para normalizar, resultando em w_c.
         w_c = F.softmax(beta * similaridade, dim=1)
 
         # 2. Interpolação (w_g)
-        # Mistura os pesos baseados em conteúdo (`w_c`) com os pesos da etapa anterior (`pesos_anteriores`)
-        # usando o gate de interpolação `g`.
         w_g = g * w_c + (1 - g) * pesos_anteriores
 
         # 3. Deslocamento Convolucional (w_tilde)
-        # Realiza uma convolução circular para "deslocar" os pesos `w_g` de acordo com `s`.
-        
-        # Expande o kernel de shift `s` para o formato (batch_size, 1, tamanho_kernel_shift) para F.conv1d.
         s_kernel = s.unsqueeze(1)
 
         # Expande `w_g` para o formato (batch_size, 1, tamanho_memoria_linhas) para F.conv1d.
@@ -281,7 +257,6 @@ class NeuralTuringMachine(nn.Module):
         w_tilde = F.conv1d(w_g_padded, s_kernel, groups=batch_size).squeeze(1) # Remove a dimensão do canal (1)
 
         # 4. Afiamento/Nitidez (Sharpening) (w_final)
-        # Aplica o fator `gamma` para tornar os pesos mais nítidos e re-normaliza com softmax.
         w_final_numerador = w_tilde.pow(gamma)
         w_final_denominador = w_final_numerador.sum(dim=1, keepdim=True)
         # Adiciona um pequeno epsilon (1e-8) para evitar divisão por zero.
